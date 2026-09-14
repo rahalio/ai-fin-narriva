@@ -1,0 +1,725 @@
+openapi: 3.0.3
+info:
+  title: Narriva
+  version: 0.1.0
+  description: NLG client reporting that binds narratives to locked portfolio fact snapshots.
+  x-product-slug: ai-fin-narriva
+  x-source: ai-in-financial/Narrative-Science-The-Rise-of-ai-in-financial-Services/
+servers:
+- url: https://api.example.com
+tags:
+- name: Snapshots
+  description: Fact snapshots
+- name: Templates
+  description: Audience templates
+- name: Narratives
+  description: Generated narratives
+- name: Approvals
+  description: Review approvals
+- name: Deliveries
+  description: Channel deliveries
+- name: Reproductions
+  description: Audit reproductions
+paths:
+  /v1/snapshots:
+    get:
+      operationId: listFactSnapshots
+      tags:
+      - Snapshots
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeFactSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createFactSnapshot
+      tags:
+      - Snapshots
+      security:
+      - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactSnapshotCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeFactSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/snapshots/{snapshotId}/lock:
+    parameters:
+    - $ref: '#/components/parameters/SnapshotId'
+    post:
+      operationId: lockFactSnapshot
+      tags:
+      - Snapshots
+      security: &id001
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeFactSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/templates:
+    get:
+      operationId: listTemplates
+      tags:
+      - Templates
+      security: *id001
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeTemplate'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createTemplate
+      tags:
+      - Templates
+      security: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeTemplate'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/narratives:
+    get:
+      operationId: listNarratives
+      tags:
+      - Narratives
+      security: *id001
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeNarrativeDraft'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: generateNarrative
+      tags:
+      - Narratives
+      security: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NarrativeGenerateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeNarrativeDraft'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/narratives/{narrativeId}/approvals:
+    parameters:
+    - $ref: '#/components/parameters/NarrativeId'
+    post:
+      operationId: approveNarrative
+      tags:
+      - Approvals
+      security: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeApproval'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/deliveries:
+    get:
+      operationId: listDeliveries
+      tags:
+      - Deliveries
+      security: *id001
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEnvelopeDeliveredNarrative'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: deliverNarrative
+      tags:
+      - Deliveries
+      security: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeDeliveredNarrative'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/reproductions:
+    post:
+      operationId: reproduceNarrative
+      tags:
+      - Reproductions
+      security: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - narrativeId
+              properties:
+                narrativeId:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelopeReproductionJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    SnapshotId:
+      name: snapshotId
+      in: path
+      required: true
+      schema:
+        type: string
+    NarrativeId:
+      name: narrativeId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    ResponseMeta:
+      type: object
+      required:
+      - requestId
+      - timestamp
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+    FactSnapshot:
+      type: object
+      required:
+      - id
+      - accountId
+      - asOf
+      - status
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        asOf:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - open
+          - locked
+        fieldCount:
+          type: integer
+    FactSnapshotCreate:
+      type: object
+      required:
+      - accountId
+      - asOf
+      - fields
+      properties:
+        accountId:
+          type: string
+        asOf:
+          type: string
+          format: date-time
+        fields:
+          type: object
+          additionalProperties: true
+    Template:
+      type: object
+      required:
+      - id
+      - name
+      - audience
+      - status
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        audience:
+          type: string
+          enum:
+          - retail_client
+          - advisor
+          - institutional
+        locale:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - approved
+          - retired
+    TemplateCreate:
+      type: object
+      required:
+      - name
+      - audience
+      - body
+      properties:
+        name:
+          type: string
+        audience:
+          type: string
+          enum:
+          - retail_client
+          - advisor
+          - institutional
+        locale:
+          type: string
+        body:
+          type: string
+        disclosureRuleIds:
+          type: array
+          items:
+            type: string
+    NarrativeDraft:
+      type: object
+      required:
+      - id
+      - snapshotId
+      - templateId
+      - status
+      properties:
+        id:
+          type: string
+        snapshotId:
+          type: string
+        templateId:
+          type: string
+        text:
+          type: string
+        missingFacts:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+          - generated
+          - failed_missing_facts
+          - approved
+          - rejected
+          - delivered
+    NarrativeGenerateRequest:
+      type: object
+      required:
+      - snapshotId
+      - templateId
+      properties:
+        snapshotId:
+          type: string
+        templateId:
+          type: string
+    Approval:
+      type: object
+      required:
+      - id
+      - narrativeId
+      - outcome
+      properties:
+        id:
+          type: string
+        narrativeId:
+          type: string
+        outcome:
+          type: string
+          enum:
+          - approved
+          - rejected
+        comment:
+          type: string
+        approvedBy:
+          type: string
+    ApprovalCreate:
+      type: object
+      required:
+      - outcome
+      properties:
+        outcome:
+          type: string
+          enum:
+          - approved
+          - rejected
+        comment:
+          type: string
+    DeliveredNarrative:
+      type: object
+      required:
+      - id
+      - narrativeId
+      - channel
+      - deliveredAt
+      properties:
+        id:
+          type: string
+        narrativeId:
+          type: string
+        channel:
+          type: string
+          enum:
+          - pdf
+          - email
+          - in_app
+        deliveredAt:
+          type: string
+          format: date-time
+    DeliveryCreate:
+      type: object
+      required:
+      - narrativeId
+      - channel
+      properties:
+        narrativeId:
+          type: string
+        channel:
+          type: string
+          enum:
+          - pdf
+          - email
+          - in_app
+        recipientRef:
+          type: string
+    ReproductionJob:
+      type: object
+      required:
+      - id
+      - narrativeId
+      - status
+      properties:
+        id:
+          type: string
+        narrativeId:
+          type: string
+        status:
+          type: string
+          enum:
+          - queued
+          - done
+          - failed
+        downloadUrl:
+          type: string
+          format: uri
+    DataEnvelopeFactSnapshot:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/FactSnapshot'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeFactSnapshot:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/FactSnapshot'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeTemplate:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/Template'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeTemplate:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Template'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeNarrativeDraft:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/NarrativeDraft'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeNarrativeDraft:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/NarrativeDraft'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeApproval:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/Approval'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeApproval:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Approval'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeDeliveredNarrative:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/DeliveredNarrative'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeDeliveredNarrative:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/DeliveredNarrative'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DataEnvelopeReproductionJob:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/ReproductionJob'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    ListEnvelopeReproductionJob:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: object
+          required:
+          - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReproductionJob'
+            nextCursor:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
