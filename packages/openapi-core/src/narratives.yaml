@@ -1,0 +1,181 @@
+openapi: 3.1.0
+info:
+  title: Narriva Narratives API
+  version: 0.1.0
+  description: |
+    NLG generation with sentence-level claim-to-fact bindings. Fails closed on
+    missing facts. Includes period/run filters and accepted-only productivity (BR-5, BR-9).
+  license:
+    name: Proprietary
+    url: https://narriva.local/license
+  x-domain: nar
+servers:
+  - url: https://api.narriva.local
+security:
+  - apiKey: []
+tags:
+  - name: Narratives
+    description: Generated drafts, claim bindings, productivity
+paths:
+  /v0/tenants/me/narratives:
+    get:
+      operationId: listNarratives
+      tags: [Narratives]
+      summary: List narrative drafts (supports reporting-run filters)
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: periodKey
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema:
+            $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeStatus
+        - name: audience
+          in: query
+          schema:
+            type: string
+            enum: [retail_client, advisor, institutional]
+        - name: snapshotId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: generateNarrative
+      tags: [Narratives]
+      summary: Generate narrative from locked snapshot + approved template
+      x-repository: NarrativeDraft
+      x-dynamodb:
+        entityType: NARRATIVE_DRAFT
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'NARRATIVE#${narrativeId}'
+        pkPattern: template
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeGenerateRequest
+      responses:
+        '201':
+          description: Generated or fail-closed missing facts
+          content:
+            application/json:
+              schema:
+                $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/narratives/{narrativeId}:
+    get:
+      operationId: getNarrative
+      tags: [Narratives]
+      summary: Get narrative with claim bindings
+      x-repository: NarrativeDraft
+      x-dynamodb:
+        entityType: NARRATIVE_DRAFT
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'NARRATIVE#${narrativeId}'
+        pkPattern: template
+      parameters:
+        - name: narrativeId
+          in: path
+          required: true
+          schema:
+            $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/narratives/{narrativeId}/judgment:
+    post:
+      operationId: addNarrativeJudgmentOverlay
+      tags: [Narratives]
+      summary: Add non-numeric PM judgment overlay
+      x-repository: NarrativeDraft
+      parameters:
+        - name: narrativeId
+          in: path
+          required: true
+          schema:
+            $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./narratives.schemas.yaml#/components/schemas/JudgmentOverlayRequest
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: ./narratives.schemas.yaml#/components/schemas/NarrativeResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/narratives/productivity:
+    get:
+      operationId: getNarrativeProductivitySummary
+      tags: [Narratives]
+      summary: Productivity metrics (accepted drafts only — BR-9)
+      parameters:
+        - name: periodKey
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./narratives.schemas.yaml#/components/schemas/ProductivitySummaryResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

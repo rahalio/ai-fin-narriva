@@ -1,0 +1,27 @@
+.judgment {
+  border-top: 2px solid var(--color-masthead);
+  padding-top: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.judgment header {
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-masthead);
+  margin-bottom: var(--space-2);
+}
+
+.judgment p {
+  font-family: var(--font-display);
+  font-style: italic;
+  margin: 0 0 var(--space-2);
+}
+
+.judgment footer,
+.judgment-empty {
+  color: var(--color-steel);
+  font-size: 0.85rem;
+  margin: 0;
+}

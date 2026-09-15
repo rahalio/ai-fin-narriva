@@ -1,0 +1,32 @@
+{
+  "name": "narriva",
+  "version": "0.1.0",
+  "description": "Generic OpenAPI-first DDD codegen starter \u2014 shared scaffolds + identity blueprint",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:openapi": "pnpm --filter @narriva/openapi-core lint:domains",
+    "bundle:openapi": "pnpm --filter @narriva/openapi-core bundle:domains",
+    "build": "pnpm --filter @narriva/core build && pnpm --filter @narriva/services build && pnpm --filter @narriva/adapters build && pnpm --filter @narriva/api-server build",
+    "dev:api": "pnpm --filter @narriva/api-server dev",
+    "dev:web": "pnpm --filter @narriva/webapp dev",
+    "codegen:core": "node scripts/sync-codegen-paths.mjs && PYTHONPATH=.codegen/codegen/src python3 -m zero_codegen.cli.main generate --all --layers core --config .codegen/.zero-codegen-merged.json --skip-build",
+    "codegen:identity": "node scripts/sync-codegen-paths.mjs && PYTHONPATH=.codegen/codegen/src python3 -m zero_codegen.cli.main generate --domain identity --config .codegen/.zero-codegen-merged.json --skip-build",
+    "codegen:domain": "node scripts/sync-codegen-paths.mjs && PYTHONPATH=.codegen/codegen/src python3 -m zero_codegen.cli.main generate --config .codegen/.zero-codegen-merged.json --skip-build",
+    "codegen:paths": "node scripts/sync-codegen-paths.mjs",
+    "bootstrap:codegen": "node scripts/bootstrap-codegen.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.55.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9.0.0"
+  }
+}

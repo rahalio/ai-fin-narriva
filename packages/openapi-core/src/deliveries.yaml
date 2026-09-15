@@ -1,0 +1,151 @@
+openapi: 3.1.0
+info:
+  title: Narriva Deliveries API
+  version: 0.1.0
+  description: |
+    Multi-channel delivery of approved narratives. Delivered artefacts are the
+    immutable communication record (BR-7).
+  license:
+    name: Proprietary
+    url: https://narriva.local/license
+  x-domain: dlv
+servers:
+  - url: https://api.narriva.local
+security:
+  - apiKey: []
+tags:
+  - name: Deliveries
+    description: Channel send and archive stamps
+paths:
+  /v0/tenants/me/deliveries:
+    get:
+      operationId: listDeliveries
+      tags: [Deliveries]
+      summary: List deliveries / archive
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: status
+          in: query
+          schema:
+            $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryStatus
+        - name: channel
+          in: query
+          schema:
+            $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryChannel
+        - name: narrativeId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createDelivery
+      tags: [Deliveries]
+      summary: Schedule or send an approved narrative
+      x-repository: DeliveredNarrative
+      x-dynamodb:
+        entityType: DELIVERED_NARRATIVE
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'DELIVERY#${deliveryId}'
+        pkPattern: template
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryCreateRequest
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/deliveries/{deliveryId}:
+    get:
+      operationId: getDelivery
+      tags: [Deliveries]
+      summary: Get delivery / immutable artefact stamp
+      x-repository: DeliveredNarrative
+      x-dynamodb:
+        entityType: DELIVERED_NARRATIVE
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'DELIVERY#${deliveryId}'
+        pkPattern: template
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/deliveries/{deliveryId}/cancel:
+    post:
+      operationId: cancelDelivery
+      tags: [Deliveries]
+      summary: Cancel a scheduled (pre-send) delivery
+      x-repository: DeliveredNarrative
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: ./deliveries.schemas.yaml#/components/schemas/DeliveryResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

@@ -1,0 +1,128 @@
+openapi: 3.1.0
+info:
+  title: Narriva Approvals API
+  version: 0.1.0
+  description: |
+    Configurable human review gates by product risk (BR-4). Queue supports
+    approve / reject / escalate.
+  license:
+    name: Proprietary
+    url: https://narriva.local/license
+  x-domain: apr
+servers:
+  - url: https://api.narriva.local
+security:
+  - apiKey: []
+tags:
+  - name: Approvals
+    description: Narrative review and approval queue
+paths:
+  /v0/tenants/me/approvals:
+    get:
+      operationId: listApprovals
+      tags: [Approvals]
+      summary: List approval queue / history
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: riskTier
+          in: query
+          schema:
+            $ref: ./approvals.schemas.yaml#/components/schemas/RiskTier
+        - name: outcome
+          in: query
+          schema:
+            $ref: ./approvals.schemas.yaml#/components/schemas/ApprovalOutcome
+        - name: narrativeId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./approvals.schemas.yaml#/components/schemas/ApprovalListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/narratives/{narrativeId}/approvals:
+    post:
+      operationId: createNarrativeApproval
+      tags: [Approvals]
+      summary: Approve, reject, or escalate a narrative
+      x-repository: Approval
+      x-dynamodb:
+        entityType: APPROVAL
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'APPROVAL#${approvalId}'
+        pkPattern: template
+      parameters:
+        - name: narrativeId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./approvals.schemas.yaml#/components/schemas/ApprovalCreateRequest
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./approvals.schemas.yaml#/components/schemas/ApprovalResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/approvals/{approvalId}:
+    get:
+      operationId: getApproval
+      tags: [Approvals]
+      summary: Get approval record
+      x-repository: Approval
+      x-dynamodb:
+        entityType: APPROVAL
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'APPROVAL#${approvalId}'
+        pkPattern: template
+      parameters:
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            $ref: ./approvals.schemas.yaml#/components/schemas/ApprovalId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./approvals.schemas.yaml#/components/schemas/ApprovalResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

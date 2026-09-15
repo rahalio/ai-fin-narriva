@@ -1,0 +1,416 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const createReproduction_Body = z
+  .object({
+    narrativeId: z.string(),
+    snapshotId: z.string().optional(),
+    templateId: z.string().optional(),
+    templateVersion: z.number().int().optional(),
+  })
+  .passthrough();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const ReproductionId = z.string();
+const ReproductionStatus = z.enum(['queued', 'running', 'done', 'failed']);
+const ReproductionJob = z
+  .object({
+    reproductionId: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+    narrativeId: z.string(),
+    snapshotId: z.string(),
+    templateId: z.string(),
+    templateVersion: z.number().int(),
+    status: z.enum(['queued', 'running', 'done', 'failed']),
+    originalText: z.string().optional(),
+    reproducedText: z.string().optional(),
+    diverged: z.boolean().optional(),
+    downloadUrl: z.string().url().optional(),
+    errorMessage: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    completedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .passthrough();
+const ReproductionListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          reproductionId: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+          narrativeId: z.string(),
+          snapshotId: z.string(),
+          templateId: z.string(),
+          templateVersion: z.number().int(),
+          status: z.enum(['queued', 'running', 'done', 'failed']),
+          originalText: z.string().optional(),
+          reproducedText: z.string().optional(),
+          diverged: z.boolean().optional(),
+          downloadUrl: z.string().url().optional(),
+          errorMessage: z.string().optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          completedAt: z.string().datetime({ offset: true }).optional(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const ReproductionListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              reproductionId: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+              narrativeId: z.string(),
+              snapshotId: z.string(),
+              templateId: z.string(),
+              templateVersion: z.number().int(),
+              status: z.enum(['queued', 'running', 'done', 'failed']),
+              originalText: z.string().optional(),
+              reproducedText: z.string().optional(),
+              diverged: z.boolean().optional(),
+              downloadUrl: z.string().url().optional(),
+              errorMessage: z.string().optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              completedAt: z.string().datetime({ offset: true }).optional(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ReproductionCreateRequest = z
+  .object({
+    narrativeId: z.string(),
+    snapshotId: z.string().optional(),
+    templateId: z.string().optional(),
+    templateVersion: z.number().int().optional(),
+  })
+  .passthrough();
+const ReproductionResponse = z
+  .object({
+    data: z
+      .object({
+        reproductionId: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+        narrativeId: z.string(),
+        snapshotId: z.string(),
+        templateId: z.string(),
+        templateVersion: z.number().int(),
+        status: z.enum(['queued', 'running', 'done', 'failed']),
+        originalText: z.string().optional(),
+        reproducedText: z.string().optional(),
+        diverged: z.boolean().optional(),
+        downloadUrl: z.string().url().optional(),
+        errorMessage: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        completedAt: z.string().datetime({ offset: true }).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  createReproduction_Body,
+  Problem,
+  ReproductionId,
+  ReproductionStatus,
+  ReproductionJob,
+  ReproductionListData,
+  ResponseMeta,
+  ReproductionListResponse,
+  ReproductionCreateRequest,
+  ReproductionResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v0/tenants/me/reproductions',
+    alias: 'listReproductions',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+      {
+        name: 'narrativeId',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  reproductionId: z
+                    .string()
+                    .regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  narrativeId: z.string(),
+                  snapshotId: z.string(),
+                  templateId: z.string(),
+                  templateVersion: z.number().int(),
+                  status: z.enum(['queued', 'running', 'done', 'failed']),
+                  originalText: z.string().optional(),
+                  reproducedText: z.string().optional(),
+                  diverged: z.boolean().optional(),
+                  downloadUrl: z.string().url().optional(),
+                  errorMessage: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  completedAt: z.string().datetime({ offset: true }).optional(),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v0/tenants/me/reproductions',
+    alias: 'createReproduction',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createReproduction_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            reproductionId: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            narrativeId: z.string(),
+            snapshotId: z.string(),
+            templateId: z.string(),
+            templateVersion: z.number().int(),
+            status: z.enum(['queued', 'running', 'done', 'failed']),
+            originalText: z.string().optional(),
+            reproducedText: z.string().optional(),
+            diverged: z.boolean().optional(),
+            downloadUrl: z.string().url().optional(),
+            errorMessage: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            completedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v0/tenants/me/reproductions/:reproductionId',
+    alias: 'getReproduction',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'reproductionId',
+        type: 'Path',
+        schema: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            reproductionId: z.string().regex(/^rpr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            narrativeId: z.string(),
+            snapshotId: z.string(),
+            templateId: z.string(),
+            templateVersion: z.number().int(),
+            status: z.enum(['queued', 'running', 'done', 'failed']),
+            originalText: z.string().optional(),
+            reproducedText: z.string().optional(),
+            diverged: z.boolean().optional(),
+            downloadUrl: z.string().url().optional(),
+            errorMessage: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            completedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios('https://api.narriva.local/v1', endpoints);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

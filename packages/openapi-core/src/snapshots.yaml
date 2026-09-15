@@ -1,0 +1,198 @@
+openapi: 3.1.0
+info:
+  title: Narriva Snapshots API
+  version: 0.1.0
+  description: |
+    Locked, attributable fact snapshots for NLG. Generation fails closed when
+    required facts are missing (BR-1, BR-8).
+  license:
+    name: Proprietary
+    url: https://narriva.local/license
+  x-domain: snp
+servers:
+  - url: https://api.narriva.local
+    description: Local / starter API
+security:
+  - apiKey: []
+tags:
+  - name: Snapshots
+    description: Fact snapshot ingest, inspect, and lock
+paths:
+  /v0/tenants/me/snapshots:
+    get:
+      operationId: listFactSnapshots
+      tags: [Snapshots]
+      summary: List fact snapshots
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: periodKey
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: ./snapshots.schemas.yaml#/components/schemas/SnapshotStatus
+        - name: accountId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Snapshots
+          content:
+            application/json:
+              schema:
+                $ref: ./snapshots.schemas.yaml#/components/schemas/FactSnapshotListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createFactSnapshot
+      tags: [Snapshots]
+      summary: Create a fact snapshot (open)
+      x-repository: FactSnapshot
+      x-dynamodb:
+        entityType: FACT_SNAPSHOT
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'SNAPSHOT#${snapshotId}'
+        pkPattern: template
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./snapshots.schemas.yaml#/components/schemas/FactSnapshotCreateRequest
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./snapshots.schemas.yaml#/components/schemas/FactSnapshotResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/snapshots/{snapshotId}:
+    get:
+      operationId: getFactSnapshot
+      tags: [Snapshots]
+      summary: Get a fact snapshot
+      x-repository: FactSnapshot
+      x-dynamodb:
+        entityType: FACT_SNAPSHOT
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'SNAPSHOT#${snapshotId}'
+        pkPattern: template
+      parameters:
+        - name: snapshotId
+          in: path
+          required: true
+          schema:
+            $ref: ./snapshots.schemas.yaml#/components/schemas/SnapshotId
+      responses:
+        '200':
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                $ref: ./snapshots.schemas.yaml#/components/schemas/FactSnapshotResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/snapshots/{snapshotId}/lock:
+    post:
+      operationId: lockFactSnapshot
+      tags: [Snapshots]
+      summary: Lock snapshot for generation (immutable inputs)
+      x-repository: FactSnapshot
+      parameters:
+        - name: snapshotId
+          in: path
+          required: true
+          schema:
+            $ref: ./snapshots.schemas.yaml#/components/schemas/SnapshotId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Locked
+          content:
+            application/json:
+              schema:
+                $ref: ./snapshots.schemas.yaml#/components/schemas/FactSnapshotResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/snapshots/{snapshotId}/fields/{fieldId}/authoritative:
+    post:
+      operationId: markFactFieldAuthoritative
+      tags: [Snapshots]
+      summary: Mark a field authoritative (data steward)
+      x-repository: FactSnapshot
+      parameters:
+        - name: snapshotId
+          in: path
+          required: true
+          schema:
+            $ref: ./snapshots.schemas.yaml#/components/schemas/SnapshotId
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            $ref: ./snapshots.schemas.yaml#/components/schemas/FactFieldId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./snapshots.schemas.yaml#/components/schemas/MarkFieldAuthoritativeRequest
+      responses:
+        '200':
+          description: Updated snapshot
+          content:
+            application/json:
+              schema:
+                $ref: ./snapshots.schemas.yaml#/components/schemas/FactSnapshotResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

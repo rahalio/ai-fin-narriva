@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: Narriva Deliveries schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    DeliveryId:
+      type: string
+      pattern: '^dlv_[0-9A-HJKMNP-TV-Z]{26}$'
+    DeliveryChannel:
+      type: string
+      enum: [pdf, email, in_app]
+    DeliveryStatus:
+      type: string
+      enum: [scheduled, sent, delivered, failed, cancelled]
+    DeliveredNarrative:
+      type: object
+      required:
+        - deliveryId
+        - narrativeId
+        - channel
+        - status
+        - snapshotId
+        - templateId
+        - templateVersion
+        - createdAt
+      properties:
+        deliveryId:
+          $ref: '#/components/schemas/DeliveryId'
+        narrativeId:
+          type: string
+        channel:
+          $ref: '#/components/schemas/DeliveryChannel'
+        status:
+          $ref: '#/components/schemas/DeliveryStatus'
+        recipientRef:
+          type: string
+        snapshotId:
+          type: string
+        templateId:
+          type: string
+        templateVersion:
+          type: integer
+        artefactUri:
+          type: string
+          description: Immutable delivered artefact location.
+        scheduledAt:
+          type: string
+          format: date-time
+        deliveredAt:
+          type: string
+          format: date-time
+        failureReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    DeliveryCreateRequest:
+      type: object
+      required: [narrativeId, channel]
+      properties:
+        narrativeId:
+          type: string
+        channel:
+          $ref: '#/components/schemas/DeliveryChannel'
+        recipientRef:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+    DeliveryListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliveredNarrative'
+    DeliveryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DeliveredNarrative'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    DeliveryListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DeliveryListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

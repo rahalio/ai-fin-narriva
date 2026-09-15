@@ -1,0 +1,75 @@
+openapi: 3.1.0
+info:
+  title: Narriva Approvals schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ApprovalId:
+      type: string
+      pattern: '^apr_[0-9A-HJKMNP-TV-Z]{26}$'
+    ApprovalOutcome:
+      type: string
+      enum: [approved, rejected, escalated]
+    RiskTier:
+      type: string
+      enum: [routine, elevated, high]
+    Approval:
+      type: object
+      required:
+        - approvalId
+        - narrativeId
+        - outcome
+        - riskTier
+        - createdAt
+      properties:
+        approvalId:
+          $ref: '#/components/schemas/ApprovalId'
+        narrativeId:
+          type: string
+        outcome:
+          $ref: '#/components/schemas/ApprovalOutcome'
+        comment:
+          type: string
+        riskTier:
+          $ref: '#/components/schemas/RiskTier'
+        approvedBy:
+          type: string
+        slaDueAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ApprovalCreateRequest:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          $ref: '#/components/schemas/ApprovalOutcome'
+        comment:
+          type: string
+    ApprovalListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Approval'
+    ApprovalResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Approval'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ApprovalListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ApprovalListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

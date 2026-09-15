@@ -1,0 +1,147 @@
+openapi: 3.1.0
+info:
+  title: Narriva Snapshots schemas
+  version: 0.1.0
+  description: Fact snapshots and authoritative fact fields.
+paths: {}
+components:
+  schemas:
+    SnapshotId:
+      type: string
+      pattern: '^snp_[0-9A-HJKMNP-TV-Z]{26}$'
+    FactFieldId:
+      type: string
+      pattern: '^fld_[0-9A-HJKMNP-TV-Z]{26}$'
+    SnapshotStatus:
+      type: string
+      enum: [open, locked]
+    FactField:
+      type: object
+      required: [fieldId, key, value, sourceSystem, authoritative]
+      properties:
+        fieldId:
+          $ref: '#/components/schemas/FactFieldId'
+        key:
+          type: string
+          minLength: 1
+          maxLength: 128
+        value:
+          description: Structured fact value (string, number, or object).
+        sourceSystem:
+          type: string
+          minLength: 1
+          maxLength: 64
+        authoritative:
+          type: boolean
+        requiredForGeneration:
+          type: boolean
+          default: false
+    FactSnapshot:
+      type: object
+      required:
+        - snapshotId
+        - accountId
+        - asOf
+        - periodKey
+        - status
+        - fields
+        - missingRequiredKeys
+        - createdAt
+        - updatedAt
+      properties:
+        snapshotId:
+          $ref: '#/components/schemas/SnapshotId'
+        accountId:
+          type: string
+          minLength: 1
+        asOf:
+          type: string
+          format: date-time
+        periodKey:
+          type: string
+          description: Reporting period key (e.g. 2026-Q1, 2026-03).
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/SnapshotStatus'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactField'
+        missingRequiredKeys:
+          type: array
+          items:
+            type: string
+        lockedAt:
+          type: string
+          format: date-time
+        lockedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    FactSnapshotCreateRequest:
+      type: object
+      required: [accountId, asOf, periodKey, fields]
+      properties:
+        accountId:
+          type: string
+          minLength: 1
+        asOf:
+          type: string
+          format: date-time
+        periodKey:
+          type: string
+          minLength: 1
+          maxLength: 32
+        fields:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [key, value, sourceSystem]
+            properties:
+              key:
+                type: string
+              value: {}
+              sourceSystem:
+                type: string
+              authoritative:
+                type: boolean
+                default: false
+              requiredForGeneration:
+                type: boolean
+                default: false
+    MarkFieldAuthoritativeRequest:
+      type: object
+      required: [authoritative]
+      properties:
+        authoritative:
+          type: boolean
+    FactSnapshotListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactSnapshot'
+    FactSnapshotResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FactSnapshot'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    FactSnapshotListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FactSnapshotListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

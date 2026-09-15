@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: Narriva Reproductions schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ReproductionId:
+      type: string
+      pattern: '^rpr_[0-9A-HJKMNP-TV-Z]{26}$'
+    ReproductionStatus:
+      type: string
+      enum: [queued, running, done, failed]
+    ReproductionJob:
+      type: object
+      required:
+        - reproductionId
+        - narrativeId
+        - snapshotId
+        - templateId
+        - templateVersion
+        - status
+        - createdAt
+      properties:
+        reproductionId:
+          $ref: '#/components/schemas/ReproductionId'
+        narrativeId:
+          type: string
+        snapshotId:
+          type: string
+        templateId:
+          type: string
+        templateVersion:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ReproductionStatus'
+        originalText:
+          type: string
+        reproducedText:
+          type: string
+        diverged:
+          type: boolean
+        downloadUrl:
+          type: string
+          format: uri
+        errorMessage:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+    ReproductionCreateRequest:
+      type: object
+      required: [narrativeId]
+      properties:
+        narrativeId:
+          type: string
+        snapshotId:
+          type: string
+          description: Optional override; defaults to delivered snapshot.
+        templateId:
+          type: string
+        templateVersion:
+          type: integer
+    ReproductionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReproductionJob'
+    ReproductionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReproductionJob'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ReproductionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReproductionListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

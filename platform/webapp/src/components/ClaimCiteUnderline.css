@@ -1,0 +1,52 @@
+.cite-galley {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.7;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 23px,
+      rgba(27, 42, 65, 0.03) 24px
+    ),
+    var(--color-panel);
+  border: 1px solid var(--color-rule);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+}
+
+.cite-sentence {
+  margin: 0 0 var(--space-3);
+}
+
+.cite-mark {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--color-cite-blue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--motion-cite);
+}
+
+.cite-mark:hover,
+.cite-mark:focus-visible {
+  text-decoration-color: var(--color-ink);
+  outline: none;
+}
+
+.cite-label {
+  margin-left: 4px;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-cite-blue);
+  vertical-align: super;
+}

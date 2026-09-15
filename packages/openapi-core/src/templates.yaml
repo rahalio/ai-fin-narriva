@@ -1,0 +1,249 @@
+openapi: 3.1.0
+info:
+  title: Narriva Templates API
+  version: 0.1.0
+  description: |
+    Audience-specific templates and disclosure rules. Compliance pre-approves
+    libraries; unapproved templates cannot be selected for production (BR-2, BR-3).
+  license:
+    name: Proprietary
+    url: https://narriva.local/license
+  x-domain: tpl
+servers:
+  - url: https://api.narriva.local
+security:
+  - apiKey: []
+tags:
+  - name: Templates
+    description: Audience templates and disclosure rules
+paths:
+  /v0/tenants/me/templates:
+    get:
+      operationId: listTemplates
+      tags: [Templates]
+      summary: List templates
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: audience
+          in: query
+          schema:
+            $ref: ./templates.schemas.yaml#/components/schemas/Audience
+        - name: status
+          in: query
+          schema:
+            $ref: ./templates.schemas.yaml#/components/schemas/TemplateStatus
+        - name: locale
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/TemplateListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createTemplate
+      tags: [Templates]
+      summary: Create draft template
+      x-repository: Template
+      x-dynamodb:
+        entityType: TEMPLATE
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'TEMPLATE#${templateId}'
+        pkPattern: template
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./templates.schemas.yaml#/components/schemas/TemplateCreateRequest
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/TemplateResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/templates/{templateId}:
+    get:
+      operationId: getTemplate
+      tags: [Templates]
+      summary: Get template (includes logic outline / bindings)
+      x-repository: Template
+      x-dynamodb:
+        entityType: TEMPLATE
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'TEMPLATE#${templateId}'
+        pkPattern: template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: ./templates.schemas.yaml#/components/schemas/TemplateId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/TemplateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/templates/{templateId}/submit:
+    post:
+      operationId: submitTemplateForApproval
+      tags: [Templates]
+      summary: Submit draft template for compliance approval
+      x-repository: Template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: ./templates.schemas.yaml#/components/schemas/TemplateId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/TemplateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/templates/{templateId}/approve:
+    post:
+      operationId: approveTemplate
+      tags: [Templates]
+      summary: Approve template version
+      x-repository: Template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: ./templates.schemas.yaml#/components/schemas/TemplateId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/TemplateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/templates/{templateId}/retire:
+    post:
+      operationId: retireTemplate
+      tags: [Templates]
+      summary: Retire template (force migration off obsolete disclosures)
+      x-repository: Template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: ./templates.schemas.yaml#/components/schemas/TemplateId
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '200':
+          description: Retired
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/TemplateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/disclosure-rules:
+    get:
+      operationId: listDisclosureRules
+      tags: [Templates]
+      summary: List disclosure rules
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/DisclosureRuleListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createDisclosureRule
+      tags: [Templates]
+      summary: Create disclosure rule
+      x-repository: DisclosureRule
+      x-dynamodb:
+        entityType: DISCLOSURE_RULE
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'DISCLOSURE#${disclosureRuleId}'
+        pkPattern: template
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./templates.schemas.yaml#/components/schemas/DisclosureRuleCreateRequest
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./templates.schemas.yaml#/components/schemas/DisclosureRuleResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

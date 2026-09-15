@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: Narriva Narratives schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    NarrativeId:
+      type: string
+      pattern: '^nar_[0-9A-HJKMNP-TV-Z]{26}$'
+    ClaimBindingId:
+      type: string
+      pattern: '^clm_[0-9A-HJKMNP-TV-Z]{26}$'
+    NarrativeStatus:
+      type: string
+      enum:
+        - generated
+        - failed_missing_facts
+        - pending_review
+        - approved
+        - rejected
+        - delivered
+    ClaimBinding:
+      type: object
+      required: [claimBindingId, sentenceIndex, claimText, factFieldKey, snapshotId]
+      properties:
+        claimBindingId:
+          $ref: '#/components/schemas/ClaimBindingId'
+        sentenceIndex:
+          type: integer
+          minimum: 0
+        claimText:
+          type: string
+        factFieldKey:
+          type: string
+        snapshotId:
+          type: string
+        locale:
+          type: string
+    NarrativeDraft:
+      type: object
+      required:
+        - narrativeId
+        - snapshotId
+        - templateId
+        - templateVersion
+        - periodKey
+        - audience
+        - locale
+        - status
+        - claimBindings
+        - missingFacts
+        - createdAt
+        - updatedAt
+      properties:
+        narrativeId:
+          $ref: '#/components/schemas/NarrativeId'
+        snapshotId:
+          type: string
+        templateId:
+          type: string
+        templateVersion:
+          type: integer
+        periodKey:
+          type: string
+        audience:
+          type: string
+          enum: [retail_client, advisor, institutional]
+        locale:
+          type: string
+        text:
+          type: string
+        claimBindings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimBinding'
+        missingFacts:
+          type: array
+          items:
+            type: string
+        judgmentOverlay:
+          type: string
+          description: Non-numeric PM commentary (does not alter claim bindings).
+        status:
+          $ref: '#/components/schemas/NarrativeStatus'
+        reviewGate:
+          type: string
+          enum: [auto_send, pm_required, compliance_required]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    NarrativeGenerateRequest:
+      type: object
+      required: [snapshotId, templateId]
+      properties:
+        snapshotId:
+          type: string
+        templateId:
+          type: string
+        locale:
+          type: string
+    JudgmentOverlayRequest:
+      type: object
+      required: [judgmentOverlay]
+      properties:
+        judgmentOverlay:
+          type: string
+          maxLength: 8000
+    ProductivitySummary:
+      type: object
+      required:
+        - periodKey
+        - acceptedCount
+        - rejectedCount
+        - hoursSavedAcceptedOnly
+        - missingFactRate
+        - claimBindingCoverage
+      properties:
+        periodKey:
+          type: string
+        acceptedCount:
+          type: integer
+          minimum: 0
+        rejectedCount:
+          type: integer
+          minimum: 0
+        hoursSavedAcceptedOnly:
+          type: number
+          description: Analyst hours saved counting accepted drafts only (BR-9).
+        missingFactRate:
+          type: number
+        claimBindingCoverage:
+          type: number
+        rejectReasons:
+          type: array
+          items:
+            type: object
+            required: [reason, count]
+            properties:
+              reason:
+                type: string
+              count:
+                type: integer
+    NarrativeListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NarrativeDraft'
+    NarrativeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/NarrativeDraft'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    NarrativeListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/NarrativeListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+    ProductivitySummaryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductivitySummary'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

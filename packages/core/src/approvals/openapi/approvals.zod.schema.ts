@@ -1,0 +1,392 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const createNarrativeApproval_Body = z
+  .object({
+    outcome: z.enum(['approved', 'rejected', 'escalated']),
+    comment: z.string().optional(),
+  })
+  .passthrough();
+const RiskTier = z.enum(['routine', 'elevated', 'high']);
+const ApprovalOutcome = z.enum(['approved', 'rejected', 'escalated']);
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const ApprovalId = z.string();
+const Approval = z
+  .object({
+    approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+    narrativeId: z.string(),
+    outcome: z.enum(['approved', 'rejected', 'escalated']),
+    comment: z.string().optional(),
+    riskTier: z.enum(['routine', 'elevated', 'high']),
+    approvedBy: z.string().optional(),
+    slaDueAt: z.string().datetime({ offset: true }).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const ApprovalListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+          narrativeId: z.string(),
+          outcome: z.enum(['approved', 'rejected', 'escalated']),
+          comment: z.string().optional(),
+          riskTier: z.enum(['routine', 'elevated', 'high']),
+          approvedBy: z.string().optional(),
+          slaDueAt: z.string().datetime({ offset: true }).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const ApprovalListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+              narrativeId: z.string(),
+              outcome: z.enum(['approved', 'rejected', 'escalated']),
+              comment: z.string().optional(),
+              riskTier: z.enum(['routine', 'elevated', 'high']),
+              approvedBy: z.string().optional(),
+              slaDueAt: z.string().datetime({ offset: true }).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ApprovalCreateRequest = z
+  .object({
+    outcome: z.enum(['approved', 'rejected', 'escalated']),
+    comment: z.string().optional(),
+  })
+  .passthrough();
+const ApprovalResponse = z
+  .object({
+    data: z
+      .object({
+        approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+        narrativeId: z.string(),
+        outcome: z.enum(['approved', 'rejected', 'escalated']),
+        comment: z.string().optional(),
+        riskTier: z.enum(['routine', 'elevated', 'high']),
+        approvedBy: z.string().optional(),
+        slaDueAt: z.string().datetime({ offset: true }).optional(),
+        createdAt: z.string().datetime({ offset: true }),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  createNarrativeApproval_Body,
+  RiskTier,
+  ApprovalOutcome,
+  Problem,
+  ApprovalId,
+  Approval,
+  ApprovalListData,
+  ResponseMeta,
+  ApprovalListResponse,
+  ApprovalCreateRequest,
+  ApprovalResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v0/tenants/me/approvals',
+    alias: 'listApprovals',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+      {
+        name: 'riskTier',
+        type: 'Query',
+        schema: z.enum(['routine', 'elevated', 'high']).optional(),
+      },
+      {
+        name: 'outcome',
+        type: 'Query',
+        schema: z.enum(['approved', 'rejected', 'escalated']).optional(),
+      },
+      {
+        name: 'narrativeId',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  narrativeId: z.string(),
+                  outcome: z.enum(['approved', 'rejected', 'escalated']),
+                  comment: z.string().optional(),
+                  riskTier: z.enum(['routine', 'elevated', 'high']),
+                  approvedBy: z.string().optional(),
+                  slaDueAt: z.string().datetime({ offset: true }).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v0/tenants/me/approvals/:approvalId',
+    alias: 'getApproval',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'approvalId',
+        type: 'Path',
+        schema: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            narrativeId: z.string(),
+            outcome: z.enum(['approved', 'rejected', 'escalated']),
+            comment: z.string().optional(),
+            riskTier: z.enum(['routine', 'elevated', 'high']),
+            approvedBy: z.string().optional(),
+            slaDueAt: z.string().datetime({ offset: true }).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v0/tenants/me/narratives/:narrativeId/approvals',
+    alias: 'createNarrativeApproval',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createNarrativeApproval_Body,
+      },
+      {
+        name: 'narrativeId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            approvalId: z.string().regex(/^apr_[0-9A-HJKMNP-TV-Z]{26}$/),
+            narrativeId: z.string(),
+            outcome: z.enum(['approved', 'rejected', 'escalated']),
+            comment: z.string().optional(),
+            riskTier: z.enum(['routine', 'elevated', 'high']),
+            approvedBy: z.string().optional(),
+            slaDueAt: z.string().datetime({ offset: true }).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios('https://api.narriva.local/v1', endpoints);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

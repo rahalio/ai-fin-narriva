@@ -1,0 +1,21 @@
+---
+description: Never commit or push .codegen; bootstrap locally from scaffold
+alwaysApply: true
+---
+
+# `.codegen` must never be committed or pushed
+
+The `.codegen/` directory (zero-codegen tool + merged JSON configs) is **local-only** in this repository.
+
+## Rules
+
+1. Do **not** `git add` `.codegen/`, commit it, or push it to GitHub (or any remote).
+2. `.codegen/` is listed in `.gitignore` as a safeguard — do not remove that entry.
+3. If `.codegen/` is missing after clone, restore it with:
+
+```bash
+node scripts/bootstrap-codegen.mjs
+```
+
+4. After bootstrap, run `pnpm codegen:paths` before any generate/bundle commands.
+5. Generated OpenAPI bundles under `packages/openapi-core/src/.bundled/` are also gitignored — do not force-add them.

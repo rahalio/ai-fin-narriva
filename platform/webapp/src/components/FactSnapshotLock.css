@@ -1,0 +1,24 @@
+.fsl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.fsl-status--locked {
+  color: var(--color-press-green);
+}
+
+.fsl-status--open {
+  color: var(--color-amber);
+}
+
+.fsl-missing {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  list-style: none;
+  background: rgba(179, 58, 58, 0.08);
+  border-left: 3px solid var(--color-stop-red);
+  color: var(--color-stop-red);
+}

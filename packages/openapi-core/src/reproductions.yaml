@@ -1,0 +1,113 @@
+openapi: 3.1.0
+info:
+  title: Narriva Reproductions API
+  version: 0.1.0
+  description: |
+    Audit reproduction from the same fact snapshot and template version (BR-10).
+  license:
+    name: Proprietary
+    url: https://narriva.local/license
+  x-domain: rpr
+servers:
+  - url: https://api.narriva.local
+security:
+  - apiKey: []
+tags:
+  - name: Reproductions
+    description: Audit reproduce jobs
+paths:
+  /v0/tenants/me/reproductions:
+    get:
+      operationId: listReproductions
+      tags: [Reproductions]
+      summary: List reproduction jobs
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: narrativeId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./reproductions.schemas.yaml#/components/schemas/ReproductionListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createReproduction
+      tags: [Reproductions]
+      summary: Start audit reproduction job
+      x-repository: ReproductionJob
+      x-dynamodb:
+        entityType: REPRODUCTION_JOB
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'REPRODUCTION#${reproductionId}'
+        pkPattern: template
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./reproductions.schemas.yaml#/components/schemas/ReproductionCreateRequest
+      responses:
+        '201':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                $ref: ./reproductions.schemas.yaml#/components/schemas/ReproductionResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v0/tenants/me/reproductions/{reproductionId}:
+    get:
+      operationId: getReproduction
+      tags: [Reproductions]
+      summary: Get reproduction job / side-by-side pack
+      x-repository: ReproductionJob
+      x-dynamodb:
+        entityType: REPRODUCTION_JOB
+        pkPatternTemplate: 'TENANT#${tenantId}'
+        skPatternTemplate: 'REPRODUCTION#${reproductionId}'
+        pkPattern: template
+      parameters:
+        - name: reproductionId
+          in: path
+          required: true
+          schema:
+            $ref: ./reproductions.schemas.yaml#/components/schemas/ReproductionId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ./reproductions.schemas.yaml#/components/schemas/ReproductionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

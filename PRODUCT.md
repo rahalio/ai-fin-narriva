@@ -121,10 +121,11 @@ flowchart TD
 - **Leading:** % narratives auto-generated with zero missing facts; median review time; template approval coverage; claim-binding coverage rate.
 - **Lagging:** cost per client letter; analyst hours on routine commentary; communication-related complaints; audit exceptions on unverifiable claims.
 
-## OpenAPI skeleton
+## OpenAPI
 
-Canonical HTTP surface lives in sibling [openapi.yaml](openapi.yaml). Summary:
+Canonical HTTP surface lives under `packages/openapi-core/src/` (one YAML per domain). Summary:
 
-- **Base path:** `/v1/...`
-- **Auth:** `X-API-Key` for fact ingestion and delivery webhooks; Bearer JWT for operators.
-- **Resource groups:** Snapshots, Templates, Narratives, Approvals, Deliveries, Reproductions.
+- **Base path:** `/v0/tenants/me/...` (scaffold tenant pattern)
+- **Auth:** `X-API-Key` for tenant APIs; Bearer JWT for operators (`/v0/auth/*`)
+- **Domains:** identity, snapshots, templates, narratives, approvals, deliveries, reproductions
+
